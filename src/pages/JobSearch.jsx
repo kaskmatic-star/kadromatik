@@ -220,33 +220,43 @@ const JobSearch = () => {
         </button>
       </motion.div>
 
-      <div className="flex justify-between items-end mb-12 flex-wrap gap-6">
-        <div>
-          <h1 className="text-4xl font-black">İş Ara</h1>
-          <p className="opacity-70 mt-2">Sana en yakın işleri harita veya liste üzerinden keşfet.</p>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-12 gap-8">
+        <div className="flex-1">
+          <div className="flex items-center gap-4 flex-wrap mb-2">
+            <h1 className="text-4xl font-black">İş Ara</h1>
+            <motion.div 
+              className="bg-success/10 text-success px-4 py-1 rounded-full text-xs font-bold border border-success/20 flex items-center gap-2"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <span className="w-2 h-2 bg-success rounded-full animate-pulse"></span>
+              {jobs.length} AKTİF İLAN
+            </motion.div>
+          </div>
+          <p className="opacity-70">Sana en yakın işleri harita veya liste üzerinden keşfet.</p>
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-4 bg-white p-2 px-4 rounded-xl shadow-sm border border-light">
-                <Search size={20} className="text-muted" />
+        <div className="flex-2 flex flex-col md:flex-row items-stretch md:items-center gap-4 w-full lg:w-auto">
+            <div className="flex-1 flex items-center gap-4 bg-white p-3 px-6 rounded-2xl shadow-sm border border-light focus-within:border-primary transition-all">
+                <Search size={22} className="text-muted" />
                 <input 
                     type="text" 
                     placeholder="Görev, şirket veya şehir..." 
-                    className="outline-none p-2 font-bold bg-transparent"
+                    className="outline-none p-2 font-bold bg-transparent w-full text-lg"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
             
-            <div className="flex bg-light p-1 rounded-xl shadow-sm border border-light h-fit">
+            <div className="flex bg-light p-1.5 rounded-2xl shadow-sm border border-light h-fit shrink-0">
                 <button 
-                    className={`px-6 py-3 rounded-lg flex items-center gap-2 font-bold text-sm transition-all ${viewMode === 'list' ? 'bg-white shadow-md text-primary' : 'text-muted hover:text-dark'}`}
+                    className={`px-8 py-3 rounded-xl flex items-center gap-2 font-bold text-sm transition-all ${viewMode === 'list' ? 'bg-white shadow-md text-primary' : 'text-muted hover:text-dark'}`}
                     onClick={() => setViewMode('list')}
                 >
                     <Filter size={18} /> LİSTE
                 </button>
                 <button 
-                    className={`px-6 py-3 rounded-lg flex items-center gap-2 font-bold text-sm transition-all ${viewMode === 'map' ? 'bg-white shadow-md text-primary' : 'text-muted hover:text-dark'}`}
+                    className={`px-8 py-3 rounded-xl flex items-center gap-2 font-bold text-sm transition-all ${viewMode === 'map' ? 'bg-white shadow-md text-primary' : 'text-muted hover:text-dark'}`}
                     onClick={() => setViewMode('map')}
                 >
                     <MapPin size={18} /> HARİTA

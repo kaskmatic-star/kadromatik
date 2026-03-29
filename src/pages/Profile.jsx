@@ -3,15 +3,22 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { User, Mail, Shield, Mic, Calendar, Edit3, Trash2, ArrowLeft, Play, Pause } from 'lucide-react';
+import { User, Mail, Shield, Mic, Calendar, Edit3, Trash2, ArrowLeft, Play, Pause, Camera, Download, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { updateDoc } from 'firebase/firestore';
+import { storage } from '../firebase';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const Profile = () => {
   const { user } = useAuth();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = React.useRef(new Audio());
+  const cvRef = React.useRef(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -42,6 +49,48 @@ const Profile = () => {
     setIsPlaying(!isPlaying);
   };
 
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !user) return;
+
+    setUploading(true);
+    try {
+      const storageRef = ref(storage, `profiles/${user.uid}/avatar.jpg`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      const userDoc = doc(db, "users", user.uid);
+      await updateDoc(userDoc, { photoURL: downloadURL });
+      setProfileData(prev => ({ ...prev, photoURL: downloadURL }));
+      alert("Profil fotoğrafı güncellendi!");
+    } catch (err) {
+      console.error(err);
+      alert("Yükleme hatası!");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const generatePDF = async () => {
+    const element = cvRef.current;
+    if (!element) return;
+
+    try {
+      const canvas = await html2canvas(element, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`kadromatik-cv-${profileData?.displayName || 'user'}.pdf`);
+    } catch (err) {
+      console.error("PDF Hatası:", err);
+      alert("PDF oluşturulurken bir hata oluştu.");
+    }
+  };
+
   useEffect(() => {
     const audio = audioRef.current;
     const handleEnded = () => setIsPlaying(false);
@@ -65,9 +114,20 @@ const Profile = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
           >
-            <div className="w-32 h-32 bg-primary-light rounded-full flex items-center justify-center text-primary mx-auto mb-6 shadow-md border-4 border-white">
-              <User size={64} />
+            <div className="relative w-32 h-32 mx-auto mb-6 group">
+              <div className="w-full h-full bg-primary-light rounded-full flex items-center justify-center text-primary shadow-md border-4 border-white overflow-hidden">
+                {profileData?.photoURL ? (
+                  <img src={profileData.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <User size={64} />
+                )}
+              </div>
+              <label className="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full cursor-pointer shadow-lg hover:scale-110 transition-transform">
+                <Camera size={16} />
+                <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} disabled={uploading} />
+              </label>
             </div>
+
             <h2 className="mb-1">{profileData?.displayName || user?.email.split('@')[0]}</h2>
             <div className="inline-block px-3 py-1 bg-primary text-white text-[10px] font-black rounded-full uppercase tracking-widest mb-6">
               {profileData?.role === 'worker' ? 'İŞ ARAYAN' : 'İŞVEREN'}
@@ -105,13 +165,19 @@ const Profile = () => {
             
             <div className="mt-8 md:mt-0 w-full md:w-auto">
               {profileData?.voiceCVUrl ? (
-                <div className="flex gap-4">
+                <div className="flex gap-3 flex-wrap">
                   <button 
                     onClick={togglePlayback}
                     className="btn btn-primary py-4 px-8 rounded-xl flex items-center gap-3 font-bold"
                   >
                     {isPlaying ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" />}
                     {isPlaying ? 'DURAKLAT' : 'ŞİMDİ DİNLE'}
+                  </button>
+                  <button 
+                    onClick={generatePDF}
+                    className="btn btn-success py-4 px-8 rounded-xl flex items-center gap-3 font-bold text-white shadow-lg"
+                  >
+                    <FileText size={20} /> PDF İNDİR
                   </button>
                   <button className="btn btn-outline p-4 rounded-xl hover:bg-danger/10 hover:text-danger hover:border-danger border-light">
                     <Trash2 size={24} />
@@ -124,6 +190,33 @@ const Profile = () => {
               )}
             </div>
           </motion.div>
+
+          {/* Hidden CV Content for PDF Generation */}
+          <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+            <div ref={cvRef} style={{ width: '210mm', padding: '20mm', background: 'white', color: '#333' }}>
+               <div style={{ borderBottom: '5px solid var(--primary)', paddingBottom: '10mm', marginBottom: '10mm', display: 'flex', alignItems: 'center', gap: '10mm' }}>
+                   {profileData?.photoURL ? (
+                     <img src={profileData.photoURL} alt="CV" style={{ width: '40mm', height: '40mm', borderRadius: '50%', objectCover: 'cover', border: '2px solid var(--primary)' }} />
+                   ) : (
+                     <div style={{ width: '40mm', height: '40mm', background: '#eee', borderRadius: '50%', display: 'flex', alignItems: 'center', justify: 'center' }}>FOTO YOK</div>
+                   )}
+                   <div>
+                     <h1 style={{ margin: 0, fontSize: '28pt', fontWeight: '900' }}>{profileData?.displayName || user?.email.split('@')[0]}</h1>
+                     <p style={{ margin: 0, fontSize: '14pt', color: 'var(--primary)', fontWeight: 'bold' }}>{profileData?.role === 'worker' ? 'İş Arayan' : 'İşveren'}</p>
+                     <p style={{ margin: '2mm 0 0', fontSize: '10px' }}>{user?.email}</p>
+                   </div>
+               </div>
+               <div style={{ marginBottom: '10mm' }}>
+                  <h3 style={{ borderLeft: '3mm solid var(--primary)', paddingLeft: '5mm', margin: '0 0 5mm' }}>Hakkımda</h3>
+                  <p style={{ lineHeight: '1.6' }}>Sana en yakın işleri harita veya liste üzerinden keşfeden, geleceğine ses katmak için Kadromatik platformunda yer alan profesyonel bir aday.</p>
+               </div>
+               <div style={{ background: '#f8fbfc', padding: '10mm', borderRadius: '10mm' }}>
+                  <h3 style={{ margin: '0 0 5mm' }}>Sesli CV Detayı</h3>
+                  <p>Bu aday, kendisini bizzat sesiyle tanıtmıştır. Ses kaydına platform üzerinden ulaşılabilir veya sisteme kayıtlı işverenler tarafından dinlenebilir.</p>
+                  <div style={{ fontSize: '9px', opacity: 0.5, marginTop: '5mm' }}>Belge Kadromatik Dijital CV Sistemi tarafından oluşturulmuştur. {new Date().toLocaleDateString('tr-TR')}</div>
+               </div>
+            </div>
+          </div>
 
           {/* Activity Section Placeholder */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

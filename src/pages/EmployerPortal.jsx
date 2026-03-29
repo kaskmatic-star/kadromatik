@@ -61,8 +61,8 @@ const EmployerPortal = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">İŞVEREN PANELİ</span>
-            <h1 style={{fontSize: '3rem', lineHeight: 1.1}} className="mb-6 font-black">Ekibinizi Saniyeler İçinde Kurun</h1>
+            <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">İŞÇİ ARA & İLAN YAYINLA</span>
+            <h1 style={{fontSize: '3rem', lineHeight: 1.1}} className="mb-6 font-black">İşçi Ara & Ekibini Hemen Kur</h1>
             <p className="text-lg text-muted mb-8 leading-relaxed max-w-md">
               Adayların sadece CV'sini değil, sesini de duyun. Kadromatik ile doğru adayı bulmak hiç bu kadar kolay olmamıştı.
             </p>
@@ -73,7 +73,9 @@ const EmployerPortal = () => {
               >
                 <Plus size={24} /> YENİ İLAN YAYINLA
               </button>
-              <button className="btn btn-outline py-4 px-8 rounded-xl font-bold">REHBERİ İNCELE</button>
+              <button className="btn btn-outline py-4 px-8 rounded-xl font-bold flex items-center gap-2">
+                <Users size={20} /> AKTİF İŞÇİLERİ GÖR
+              </button>
             </div>
           </motion.div>
         </div>

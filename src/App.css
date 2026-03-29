@@ -285,3 +285,105 @@
   .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .lg\:col-span-2 { grid-column: span 2 / span 2; }
 }
+
+/* ============================================================
+   MOBİL RESPONSIVE OVERRIDES (max-width: 768px)
+   ============================================================ */
+@media (max-width: 768px) {
+
+  /* Section genel padding azalt */
+  .section {
+    padding: var(--spacing-12) 0;
+  }
+
+  /* Hero */
+  .hero-section {
+    min-height: auto;
+    padding-top: 90px;
+    padding-bottom: var(--spacing-12);
+  }
+  .hero-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: var(--spacing-8);
+  }
+  .hero-content p {
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hero-btns {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .hero-image {
+    display: none;
+  }
+
+  /* Features */
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-6);
+    margin-top: var(--spacing-8);
+  }
+
+  /* Showcase */
+  .showcase-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-8);
+  }
+  .showcase-image {
+    order: -1;
+  }
+
+  /* Footer */
+  .footer {
+    padding: var(--spacing-12) 0 var(--spacing-6);
+  }
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-6);
+    margin-bottom: var(--spacing-8);
+  }
+  .footer-bottom {
+    flex-direction: column;
+    gap: var(--spacing-4);
+    text-align: center;
+    align-items: center;
+  }
+
+  /* İş kartı – ücret/buton ortalı görünsün */
+  .feature-card.flex > .text-right {
+    text-align: center;
+    width: 100%;
+  }
+
+  /* Büyük padding değerlerini mobile'da küçült */
+  .p-16 { padding: var(--spacing-8); }
+  .p-12 { padding: var(--spacing-6); }
+  .p-10 { padding: var(--spacing-6); }
+  .px-12 { padding-left: var(--spacing-6); padding-right: var(--spacing-6); }
+
+  /* Voice CV modal içi padding */
+  .rounded-3xl.shadow-2xl {
+    padding: var(--spacing-6);
+  }
+}
+
+/* Çok küçük ekranlar (480px altı) */
+@media (max-width: 480px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+  .hero-btns {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hero-btns a {
+    text-align: center;
+  }
+  /* Arama kutusu tam genişlik */
+  .job-search-page .flex.items-center.gap-4.flex-wrap {
+    width: 100%;
+  }
+}
