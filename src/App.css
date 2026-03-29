@@ -44,6 +44,29 @@
   color: var(--primary);
 }
 
+.nav-links {
+  display: flex;
+  gap: var(--spacing-8);
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+}
+
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 320px;
+  background: white;
+  z-index: 2000;
+  box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+}
+
 /* Hero Section */
 .hero-section {
   padding-top: var(--spacing-20);
