@@ -3,21 +3,20 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { User, Mail, Shield, Mic, Calendar, Edit3, Trash2, ArrowLeft, Play, Pause, Camera, Download, FileText, Users } from 'lucide-react';
+import { User, Mail, Shield, Mic, Calendar, Edit3, Trash2, ArrowLeft, Play, Pause, Camera, FileText, Users, Upload, Download, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 const Profile = () => {
   const { user } = useAuth();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [cvUploading, setCvUploading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = React.useRef(new Audio());
-  const cvRef = React.useRef(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -70,23 +69,109 @@ const Profile = () => {
     }
   };
 
-  const generatePDF = async () => {
-    const element = cvRef.current;
-    if (!element) return;
-
+  const handleCVUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !user) return;
+    setCvUploading(true);
     try {
-      const canvas = await html2canvas(element, { scale: 2 });
-      const imgData = canvas.toDataURL('image/png');
+      const storageRef = ref(storage, `cv-files/${user.uid}/${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      await updateDoc(doc(db, 'users', user.uid), { cvFileUrl: downloadURL, cvFileName: file.name });
+      setProfileData(prev => ({ ...prev, cvFileUrl: downloadURL, cvFileName: file.name }));
+      alert('CV başarıyla yüklendi!');
+    } catch (err) {
+      console.error(err);
+      alert('Yükleme hatası!');
+    } finally {
+      setCvUploading(false);
+    }
+  };
+
+  const generatePDF = async () => {
+    try {
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const W = pdf.internal.pageSize.getWidth();
+
+      // Header mavi blok
+      pdf.setFillColor(0, 86, 179);
+      pdf.rect(0, 0, W, 55, 'F');
+
+      // Profil fotoğrafı varsa yükle
+      if (profileData?.photoURL) {
+        try {
+          const res = await fetch(profileData.photoURL);
+          const blob = await res.blob();
+          const dataUrl = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+          pdf.addImage(dataUrl, 'JPEG', 12, 10, 32, 32);
+        } catch { /* fotoğraf yüklenemezse atla */ }
+      }
+
+      // Ad Soyad
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(22);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(profileData?.displayName || user?.email.split('@')[0], 52, 24);
+
+      // Rol + email
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(profileData?.role === 'worker' ? 'İş Arayan' : 'İşveren', 52, 33);
+      pdf.setFontSize(9);
+      pdf.text(user?.email || '', 52, 41);
+
+      // Kayıt tarihi
+      const tarih = profileData?.createdAt
+        ? new Date(profileData.createdAt).toLocaleDateString('tr-TR')
+        : new Date().toLocaleDateString('tr-TR');
+      pdf.text(`Kayıt: ${tarih}`, 52, 49);
+
+      // Bölüm başlığı
+      pdf.setTextColor(0, 86, 179);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Sesli CV Profili', 12, 72);
+
+      pdf.setDrawColor(0, 86, 179);
+      pdf.line(12, 74, W - 12, 74);
+
+      // Açıklama
+      pdf.setTextColor(60, 60, 60);
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      const desc = 'Bu aday Kadromatik platformunda sesli CV oluşturmuştur. Kendisini bizzat sesiyle tanıtmış olup ses kaydına platform üzerinden ulaşılabilir.';
+      const descLines = pdf.splitTextToSize(desc, W - 24);
+      pdf.text(descLines, 12, 82);
+
+      // Sesli CV linki
+      if (profileData?.voiceCVUrl) {
+        pdf.setTextColor(0, 86, 179);
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Sesli CV Bağlantısı:', 12, 102);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8);
+        pdf.setTextColor(80, 80, 80);
+        const urlLines = pdf.splitTextToSize(profileData.voiceCVUrl, W - 24);
+        pdf.text(urlLines, 12, 109);
+      }
+
+      // Footer
+      pdf.setFillColor(248, 249, 250);
+      pdf.rect(0, 262, W, 35, 'F');
+      pdf.setTextColor(140, 140, 140);
+      pdf.setFontSize(8);
+      pdf.text('Kadromatik Dijital CV Sistemi tarafından oluşturulmuştur.', 12, 275);
+      pdf.text(`Oluşturma tarihi: ${new Date().toLocaleDateString('tr-TR')}`, 12, 282);
+
       pdf.save(`kadromatik-cv-${profileData?.displayName || 'user'}.pdf`);
     } catch (err) {
-      console.error("PDF Hatası:", err);
-      alert("PDF oluşturulurken bir hata oluştu.");
+      console.error('PDF Hatası:', err);
+      alert('PDF oluşturulurken bir hata oluştu.');
     }
   };
 
@@ -213,32 +298,57 @@ const Profile = () => {
             )}
           </motion.div>
 
-          {/* Hidden CV Content for PDF Generation */}
-          <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-            <div ref={cvRef} style={{ width: '210mm', padding: '20mm', background: 'white', color: '#333' }}>
-               <div style={{ borderBottom: '5px solid #0056b3', paddingBottom: '10mm', marginBottom: '10mm', display: 'flex', alignItems: 'center', gap: '10mm' }}>
-                   {profileData?.photoURL ? (
-                     <img src={profileData.photoURL} alt="CV" style={{ width: '40mm', height: '40mm', borderRadius: '50%', objectFit: 'cover', border: '2px solid #0056b3' }} />
-                   ) : (
-                     <div style={{ width: '40mm', height: '40mm', background: '#eee', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>FOTO YOK</div>
-                   )}
-                   <div>
-                     <h1 style={{ margin: 0, fontSize: '28pt', fontWeight: '900' }}>{profileData?.displayName || user?.email.split('@')[0]}</h1>
-                     <p style={{ margin: 0, fontSize: '14pt', color: '#0056b3', fontWeight: 'bold' }}>{profileData?.role === 'worker' ? 'İş Arayan' : 'İşveren'}</p>
-                     <p style={{ margin: '2mm 0 0', fontSize: '10px' }}>{user?.email}</p>
-                   </div>
-               </div>
-               <div style={{ marginBottom: '10mm' }}>
-                  <h3 style={{ borderLeft: '3mm solid #0056b3', paddingLeft: '5mm', margin: '0 0 5mm' }}>Hakkımda</h3>
-                  <p style={{ lineHeight: '1.6' }}>Sana en yakın işleri harita veya liste üzerinden keşfeden, geleceğine ses katmak için Kadromatik platformunda yer alan profesyonel bir aday.</p>
-               </div>
-               <div style={{ background: '#f8fbfc', padding: '10mm', borderRadius: '10mm' }}>
-                  <h3 style={{ margin: '0 0 5mm' }}>Sesli CV Detayı</h3>
-                  <p>Bu aday, kendisini bizzat sesiyle tanıtmıştır. Ses kaydına platform üzerinden ulaşılabilir veya sisteme kayıtlı işverenler tarafından dinlenebilir.</p>
-                  <div style={{ fontSize: '9px', opacity: 0.5, marginTop: '5mm' }}>Belge Kadromatik Dijital CV Sistemi tarafından oluşturulmuştur. {new Date().toLocaleDateString('tr-TR')}</div>
-               </div>
+          {/* CV Yükle Kartı */}
+          <motion.div
+            className="feature-card p-8 bg-white border border-light shadow-sm"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex gap-5 items-center w-full">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-md flex-shrink-0"
+                  style={{ background: profileData?.cvFileUrl ? 'var(--success)' : 'var(--secondary)' }}>
+                  {profileData?.cvFileUrl ? <CheckCircle size={28} /> : <Upload size={28} />}
+                </div>
+                <div className="text-left">
+                  <h3 className="text-lg font-bold mb-1">Özgeçmiş (CV) Dosyası</h3>
+                  {profileData?.cvFileUrl ? (
+                    <p className="text-sm text-muted mb-0 truncate max-w-[220px]">
+                      ✓ {profileData.cvFileName || 'CV yüklendi'}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted mb-0">PDF, Word veya görsel formatında CV yükleyin.</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-3 flex-wrap mt-2 md:mt-0">
+                {profileData?.cvFileUrl && (
+                  <a
+                    href={profileData.cvFileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn btn-outline py-3 px-6 rounded-xl gap-2 font-bold text-sm"
+                    style={{ borderColor: 'var(--success)', color: 'var(--success)' }}
+                  >
+                    <Download size={18} /> İNDİR
+                  </a>
+                )}
+                <label className="btn btn-primary py-3 px-6 rounded-xl gap-2 font-bold text-sm cursor-pointer"
+                  style={{ opacity: cvUploading ? 0.6 : 1 }}>
+                  <Upload size={18} />
+                  {cvUploading ? 'YÜKLENİYOR...' : profileData?.cvFileUrl ? 'DEĞİŞTİR' : 'CV YÜKLE'}
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,image/*"
+                    className="hidden"
+                    onChange={handleCVUpload}
+                    disabled={cvUploading}
+                  />
+                </label>
+              </div>
             </div>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div className="glass p-8 rounded-3xl border-light">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Briefcase, Download, Menu, X, Home, Search, Users, Info, LogOut, User } from 'lucide-react';
+import { Briefcase, Upload, Menu, X, Home, Search, Users, Info, LogOut, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 
@@ -21,7 +21,7 @@ const Navbar = () => {
   const menuLinks = [
     { title: 'Ana Sayfa', path: '/', icon: <Home size={20} /> },
     { title: 'İş Ara', path: '/is-ara', icon: <Search size={20} /> },
-    { title: 'İşçi Bul', path: '/isci-bul', icon: <Users size={20} /> },
+    { title: 'İşçi Bul', path: '/aktif-isciler', icon: <Users size={20} /> },
     { title: 'Hakkımızda', path: '/hakkimizda', icon: <Info size={20} /> },
   ];
 
@@ -69,10 +69,10 @@ const Navbar = () => {
               <Link to="/login" className="nav-link font-bold md:block hidden">Giriş Yap</Link>
             )}
 
-            <button className="btn btn-primary md:flex hidden">
-              <Download size={20} />
-              <span>İndir</span>
-            </button>
+            <Link to="/profil" className="btn btn-primary md:flex hidden">
+              <Upload size={20} />
+              <span>CV Yükle</span>
+            </Link>
             <button 
               className="md:hidden p-2 text-dark hover:bg-light rounded-lg transition-colors" 
               onClick={() => setIsMenuOpen(!isMenuOpen)}

@@ -11,25 +11,33 @@ const AIAssistant = () => {
     ]);
     const [input, setInput] = useState('');
 
+    const getBotResponse = (text) => {
+        const t = text.toLowerCase();
+        if (t.includes("cv") || t.includes("sesli") || t.includes("ipuç")) {
+            return "Harika bir Sesli CV için: Enerjik ve net konuş, adını-soyadını, tecrübeni ve en güçlü yönünü 60 saniyede özetle. İşverenler sizi dinliyor! 🎙️";
+        } else if (t.includes("iş") || t.includes("ilan") || t.includes("yakın")) {
+            return "Sana en yakın iş ilanlarını harita görünümüne geçerek bulabilirsin. 'Harita' butonuna tıkla, konumuna göre filtrelenmiş ilanlar çıksın! 📍";
+        } else if (t.includes("nasıl") || t.includes("kullan")) {
+            return "Kadromatik'i kullanmak çok kolay: 1) Kayıt ol 2) Sesli CV oluştur 3) İş ilanlarına başvur. İşverenler profilini inceleyip seni arar! 🚀";
+        } else if (t.includes("kayıt") || t.includes("giriş") || t.includes("hesap")) {
+            return "Sağ üstteki 'Giriş Yap' butonuna tıklayarak hesap oluşturabilir veya Google ile hızlıca giriş yapabilirsin. 👤";
+        }
+        return "Anladım! Sana daha iyi yardımcı olabilmem için 'Sesli CV İpuçları', 'Yakın İş İlanları' veya 'Nasıl Kullanılır?' seçeneklerinden birini seçebilirsin. 😊";
+    };
+
+    const sendMessage = (text) => {
+        const userMsg = { id: Date.now(), type: 'user', text };
+        setMessages(prev => [...prev, userMsg]);
+        setInput('');
+        setTimeout(() => {
+            setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: getBotResponse(text) }]);
+        }, 800);
+    };
+
     const handleSend = (e) => {
         e.preventDefault();
         if (!input.trim()) return;
-
-        const userMsg = { id: Date.now(), type: 'user', text: input };
-        setMessages(prev => [...prev, userMsg]);
-        setInput('');
-
-        // Simulating bot response
-        setTimeout(() => {
-            let response = "Anladım! Bu konuda sana yardımcı olmamı ister misin?";
-            if (input.toLowerCase().includes("cv") || input.toLowerCase().includes("sesli")) {
-                response = "Harika bir Sesli CV için: Özgeçmişinden bahsederken enerjik olmanı ve en son çalıştığın 2 projeyi kısaca özetlemeni öneririm. 🎙️ Başlayalım mı?";
-            } else if (input.toLowerCase().includes("iş") || input.toLowerCase().includes("ilan")) {
-                response = "Şu an Afyon ve çevresinde Naturel A.Ş. dahil 124 aktif ilanım var. Harita üzerinden sana en yakınları hemen filtreleyebiliriz! 📍";
-            }
-
-            setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: response }]);
-        }, 1000);
+        sendMessage(input);
     };
 
     return createPortal(
@@ -130,9 +138,9 @@ const AIAssistant = () => {
 
                         {/* Suggestions */}
                         <div style={{ padding: '0.5rem 1rem', display: 'flex', gap: '0.5rem', overflowX: 'auto', flexShrink: 0 }}>
-                            <SuggestionChip text="Sesli CV İpuçları" icon={<Mic size={14} />} />
-                            <SuggestionChip text="Yakın İş İlanları" icon={<MapPin size={14} />} />
-                            <SuggestionChip text="Nasıl Kullanılır?" icon={<Briefcase size={14} />} />
+                            <SuggestionChip text="Sesli CV İpuçları" icon={<Mic size={14} />} onClick={() => sendMessage("Sesli CV İpuçları")} />
+                            <SuggestionChip text="Yakın İş İlanları" icon={<MapPin size={14} />} onClick={() => sendMessage("Yakın İş İlanları")} />
+                            <SuggestionChip text="Nasıl Kullanılır?" icon={<Briefcase size={14} />} onClick={() => sendMessage("Nasıl kullanılır?")} />
                         </div>
 
                         {/* Input Area */}
@@ -156,8 +164,21 @@ const AIAssistant = () => {
     );
 };
 
-const SuggestionChip = ({ text, icon }) => (
-    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-light rounded-full text-xs font-bold text-muted whitespace-nowrap hover:border-primary hover:text-primary transition-all shadow-sm">
+const SuggestionChip = ({ text, icon, onClick }) => (
+    <button
+        onClick={onClick}
+        style={{
+            display: 'flex', alignItems: 'center', gap: '0.4rem',
+            padding: '0.4rem 0.85rem',
+            background: 'white', border: '1px solid #e9ecef',
+            borderRadius: 999, fontSize: '0.75rem', fontWeight: 700,
+            color: '#6c757d', whiteSpace: 'nowrap', cursor: 'pointer',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+            transition: 'all 0.2s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)'; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = '#e9ecef'; e.currentTarget.style.color = '#6c757d'; }}
+    >
         {icon} {text}
     </button>
 );
