@@ -73,9 +73,9 @@ const EmployerPortal = () => {
               >
                 <Plus size={24} /> YENİ İLAN YAYINLA
               </button>
-              <button className="btn btn-outline py-4 px-8 rounded-xl font-bold flex items-center gap-2">
+              <Link to="/aktif-isciler" className="btn btn-outline py-4 px-8 rounded-xl font-bold flex items-center gap-2">
                 <Users size={20} /> AKTİF İŞÇİLERİ GÖR
-              </button>
+              </Link>
             </div>
           </motion.div>
         </div>

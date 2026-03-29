@@ -67,6 +67,13 @@
   box-shadow: -10px 0 30px rgba(0,0,0,0.1);
 }
 
+/* Employer Portal – placeholder kırmızı */
+.employer-portal input::placeholder,
+.employer-portal textarea::placeholder {
+  color: #e53935;
+  opacity: 1;
+}
+
 /* Hero Section */
 .hero-section {
   padding-top: var(--spacing-20);

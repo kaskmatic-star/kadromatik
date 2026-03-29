@@ -319,6 +319,32 @@ p {
 .hover\:bg-danger\/10:hover { background-color: rgba(220, 53, 69, 0.1); }
 .hover\:opacity-80:hover { opacity: 0.8; }
 
+/* Z-index */
+.z-\[3000\] { z-index: 3000; }
+
+/* Positioning – bottom / right */
+.bottom-10 { bottom: 2.5rem; }
+.right-10  { right:  2.5rem; }
+.bottom-28 { bottom: 7rem; }
+.-top-1    { top: -0.25rem; }
+.-right-1  { right: -0.25rem; }
+
+/* Spacing */
+.space-y-6 > * + * { margin-top: 1.5rem; }
+.px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+
+/* Scrollbar hidden */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Scale hover */
+.hover\:scale-110:hover { transform: scale(1.1); }
+.hover\:scale-105:hover { transform: scale(1.05); }
+
+/* Border primary hover */
+.hover\:border-primary:hover { border-color: var(--primary); }
+.hover\:text-primary:hover   { color: var(--primary); }
+
 /* Responsive */
 @media (min-width: 768px) {
   .md\:flex-row { flex-direction: row; }

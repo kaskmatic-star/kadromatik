@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, MapPin, Filter, Calendar, Clock, Mic, CheckCircle, X, Download, Save, RefreshCw, ArrowRight, AlertCircle } from 'lucide-react';
+import { Search, MapPin, Filter, Calendar, Clock, Mic, CheckCircle, X, Download, Save, RefreshCw, ArrowRight, AlertCircle, Camera, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, getDocs, query, orderBy, doc, setDoc } from 'firebase/firestore';
@@ -23,6 +23,8 @@ const JobSearch = () => {
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -31,6 +33,14 @@ const JobSearch = () => {
   const audioChunksRef = useRef([]);
   const audioRef = useRef(new Audio());
   const timerRef = useRef(null);
+  const photoInputRef = useRef(null);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setProfilePhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
 
   const questions = [
     "Adınız ve Soyadınız nelerdir?",
@@ -157,9 +167,17 @@ const JobSearch = () => {
       const snapshot = await uploadBytes(storageRef, audioBlob);
       const downloadURL = await getDownloadURL(snapshot.ref);
 
+      let photoURL = null;
+      if (profilePhoto) {
+        const photoRef = ref(storage, `profile-photos/${user.uid}-${Date.now()}`);
+        const photoSnap = await uploadBytes(photoRef, profilePhoto);
+        photoURL = await getDownloadURL(photoSnap.ref);
+      }
+
       await setDoc(doc(db, "users", user.uid), {
         voiceCVUrl: downloadURL,
-        lastRecordDate: new Date().toISOString()
+        lastRecordDate: new Date().toISOString(),
+        ...(photoURL && { profilePhotoUrl: photoURL })
       }, { merge: true });
 
       alert("Sesli CV'niz başarıyla buluta yüklendi!");
@@ -186,6 +204,8 @@ const JobSearch = () => {
     setIsPlaying(false);
     setTimeLeft(60);
     setShowVoiceModal(false);
+    setProfilePhoto(null);
+    setPhotoPreview(null);
   };
 
   const filteredJobs = jobs.filter(j => 
@@ -329,7 +349,35 @@ const JobSearch = () => {
               <button className="absolute top-4 right-4 p-2" onClick={closeModal}><X /></button>
               
               <h2 className="mb-2">Sesli CV Kaydı</h2>
-              <p className="text-sm text-muted mb-8 tracking-tight">Kamera karşısındaymışsınız gibi rahat olun.</p>
+              <p className="text-sm text-muted mb-6 tracking-tight">Kamera karşısındaymışsınız gibi rahat olun.</p>
+
+              {/* Profil Fotoğrafı */}
+              <div className="flex flex-col items-center gap-2 mb-6">
+                <div
+                  className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-primary-light cursor-pointer"
+                  style={{background: 'var(--primary-light)'}}
+                  onClick={() => photoInputRef.current?.click()}
+                >
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Profil" style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-primary">
+                      <User size={36} />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center" style={{background:'rgba(0,0,0,0.25)'}}>
+                    <Camera size={20} color="white" />
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={photoInputRef}
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
+                <span className="text-xs text-muted">{photoPreview ? 'Fotoğraf seçildi ✓' : 'Profil fotoğrafı ekle (opsiyonel)'}</span>
+              </div>
 
               <div className="bg-primary-light p-6 rounded-2xl mb-8 min-h-[140px] flex flex-col justify-center border border-primary/10">
                 <span className="text-xs font-bold text-primary uppercase mb-2 block">Soru {currentQuestionIndex + 1}</span>
